@@ -1,0 +1,11 @@
+# phiên đăng nhập Facebook của trình duyệt — KHÔNG đưa lên GitHub
+.fb_profile/
+
+# ảnh và dữ liệu acc đã lưu
+anh_da_luu/
+
+# danh sách link cá nhân
+links.txt
+
+__pycache__/
+*.pyc

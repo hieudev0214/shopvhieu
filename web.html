@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lưu Ảnh Acc</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #fff; --text: #1c1f23; --muted: #6b7280; --line: #e3e5e8;
+    --accent: #1877f2; --accent-2: #e8f0fe; --ok: #16a34a; --err: #dc2626; --warn: #d97706;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111317; --card: #1b1e24; --text: #e8eaed; --muted: #9aa0a6; --line: #2c3038;
+            --accent: #4c9aff; --accent-2: #1d2b44; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 system-ui, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 22px; margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
+  h2 { font-size: 16px; margin: 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  textarea { width: 100%; min-height: 70px; resize: vertical; padding: 10px 12px; font: inherit;
+             border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); }
+  textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .between { justify-content: space-between; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text);
+           border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; padding: 9px 20px; }
+  button.small { padding: 4px 10px; font-size: 13px; }
+  .hint { color: var(--muted); font-size: 13px; }
+  label.auto { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 14px; cursor: pointer; }
+  .section { margin-top: 22px; }
+  .jobs { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .job { display: grid; grid-template-columns: 110px 1fr auto; gap: 10px; align-items: center;
+         padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); font-size: 14px; }
+  .job .link { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+  .badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; text-align: center; }
+  .b-queued { background: var(--line); color: var(--muted); }
+  .b-running { background: #fef3c7; color: #92400e; }
+  .b-done { background: #dcfce7; color: #166534; }
+  .b-error { background: #fee2e2; color: #991b1b; }
+  .job .res { font-weight: 600; white-space: nowrap; }
+  .job .res.err { color: var(--err); font-weight: 400; white-space: normal; }
+  .search { padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit;
+            background: var(--card); color: var(--text); width: 220px; max-width: 100%; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-top: 12px; }
+  .item { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+          display: flex; flex-direction: column; }
+  .thumb { aspect-ratio: 16/10; background: var(--line) center/cover no-repeat; cursor: pointer; position: relative; }
+  .thumb .count { position: absolute; right: 8px; bottom: 8px; background: rgba(0,0,0,.65); color: #fff;
+                  font-size: 12px; padding: 2px 8px; border-radius: 99px; }
+  .info { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .code { font-weight: 700; font-size: 16px; }
+  .price { color: var(--accent); font-weight: 700; }
+  .desc { color: var(--text); font-size: 14px; white-space: pre-line; flex: 1; }
+  .empty { color: var(--muted); text-align: center; padding: 30px; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.88); display: none; z-index: 10;
+           flex-direction: column; }
+  .modal.open { display: flex; }
+  .modal .bar { display: flex; justify-content: space-between; align-items: center; color: #fff; padding: 10px 16px; gap: 10px; }
+  .modal .view { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; position: relative; }
+  .modal .view img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.15);
+         color: #fff; border: none; font-size: 28px; width: 48px; height: 64px; border-radius: 8px; }
+  .nav.prev { left: 10px; } .nav.next { right: 10px; }
+  .strip { display: flex; gap: 6px; overflow-x: auto; padding: 10px 16px; }
+  .strip img { height: 56px; border-radius: 4px; opacity: .5; cursor: pointer; }
+  .strip img.cur { opacity: 1; outline: 2px solid #fff; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #222; color: #fff;
+           padding: 8px 16px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20; }
+  .toast.show { opacity: 1; }
+  @media (max-width: 600px) {
+    .job { grid-template-columns: 90px 1fr; }
+    .job .res { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📷 Lưu ảnh acc từ Facebook</h1>
+
+  <div class="card">
+    <textarea id="links" placeholder="Dán link bài viết Facebook vào đây (dán nhiều link cùng lúc cũng được)"></textarea>
+    <div class="row between" style="margin-top:10px">
+      <label class="auto"><input type="checkbox" id="auto" checked> Tự động lưu khi dán link</label>
+      <div class="row">
+        <button onclick="openFolder()">📂 Mở thư mục ảnh</button>
+        <button class="primary" onclick="save()">Lưu</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="jobsSection" style="display:none">
+    <div class="row between">
+      <h2>Đang xử lý</h2>
+      <button class="small" onclick="clearJobs()">Xoá danh sách đã xong</button>
+    </div>
+    <div class="jobs" id="jobs"></div>
+  </div>
+
+  <div class="section">
+    <div class="row between">
+      <h2>Acc đã lưu <span class="hint" id="total"></span></h2>
+      <input class="search" id="q" placeholder="🔍 Tìm mã số, giá, mô tả..." oninput="renderItems()">
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="bar">
+    <div><b id="mTitle"></b> <span id="mPos" style="opacity:.7"></span></div>
+    <div class="row">
+      <button class="small" onclick="openFolder(cur.folder)">📂 Mở folder</button>
+      <button class="small" onclick="closeModal()">✕ Đóng</button>
+    </div>
+  </div>
+  <div class="view">
+    <button class="nav prev" onclick="step(-1)">‹</button>
+    <img id="mImg" alt="">
+    <button class="nav next" onclick="step(1)">›</button>
+  </div>
+  <div class="strip" id="strip"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let items = [], cur = null, idx = 0, lastDone = '';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const img = (f, n) => `/img/${encodeURIComponent(f)}/${encodeURIComponent(n)}`;
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+async function api(path, body) {
+  const r = await fetch(path, body ? { method: 'POST', headers: {'Content-Type': 'application/json'},
+                                        body: JSON.stringify(body) } : {});
+  return r.json();
+}
+
+async function save() {
+  // tách các link bị dính liền nhau khi dán liên tiếp
+  const text = $('links').value.replace(/(https?:\/\/)/g, '\n$1').trim();
+  if (!text) return toast('Chưa dán link');
+  const r = await api('/api/save', { text });
+  if (!r.found) return toast('Không thấy link Facebook nào');
+  $('links').value = '';
+  toast(r.added ? `Đã thêm ${r.added} link vào hàng chờ` : 'Link này đang được xử lý rồi');
+  loadJobs();
+}
+
+// dán link vào là lưu luôn (đang lưu mà dán thêm thì link mới tự xếp hàng chờ)
+$('links').addEventListener('paste', () => {
+  if ($('auto').checked) setTimeout(save, 50);
+});
+$('links').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); save(); }
+});
+const STATUS = { queued: 'Đang chờ', running: 'Đang lưu', done: 'Xong', error: 'Lỗi' };
+async function loadJobs() {
+  const jobs = await api('/api/jobs');
+  $('jobsSection').style.display = jobs.length ? '' : 'none';
+  $('jobs').innerHTML = jobs.map(j => {
+    let res = '';
+    if (j.status === 'running') res = j.progress ? `${j.progress} ảnh...` : 'đang mở bài...';
+    if (j.status === 'done') res = `Ms ${esc(j.result.code)} · ${esc(j.result.price)} · ${j.result.ok} ảnh`;
+    if (j.status === 'error') res = `<span class="res err">${esc(j.error)}</span>`;
+    return `<div class="job"><span class="badge b-${j.status}">${STATUS[j.status]}</span>
+      <span class="link" title="${esc(j.link)}">${esc(j.link)}</span><span class="res">${res}</span></div>`;
+  }).join('');
+  // có việc mới xong -> tải lại danh sách acc
+  const doneKey = jobs.filter(j => j.status === 'done').map(j => j.id).join();
+  if (doneKey !== lastDone) { lastDone = doneKey; loadItems(); }
+  const busy = jobs.some(j => j.status === 'queued' || j.status === 'running');
+  setTimeout(loadJobs, busy ? 1000 : 3000);
+}
+
+async function loadItems() { items = await api('/api/items'); renderItems(); }
+
+function renderItems() {
+  const q = $('q').value.trim().toLowerCase();
+  const list = items.filter(it => !q || `${it.code} ${it.price} ${it.desc}`.toLowerCase().includes(q));
+  $('total').textContent = `(${items.length})`;
+  $('grid').innerHTML = list.length ? list.map((it, i) => `
+    <div class="item">
+      <div class="thumb" style="background-image:url('${it.images[0] ? img(it.folder, it.images[0]) : ''}')"
+           onclick="openModal('${encodeURIComponent(it.folder)}')">
+        <span class="count">${it.images.length} ảnh</span></div>
+      <div class="info">
+        <div class="row between"><span class="code">Ms ${esc(it.code || '?')}</span>
+          <span class="price">${esc(it.price || '—')}</span></div>
+        <div class="desc">${esc(it.desc) || '<span class="hint">(không có mô tả)</span>'}</div>
+        <div class="row">
+          <button class="small" onclick="copyInfo('${encodeURIComponent(it.folder)}')">📋 Copy</button>
+          <button class="small" onclick="openFolder(decodeURIComponent('${encodeURIComponent(it.folder)}'))">📂 Folder</button>
+        </div>
+      </div>
+    </div>`).join('') : `<div class="empty">${items.length ? 'Không tìm thấy' : 'Chưa có acc nào. Dán link ở trên để bắt đầu.'}</div>`;
+}
+
+function find(f) { return items.find(it => it.folder === decodeURIComponent(f)); }
+
+function copyInfo(f) {
+  const it = find(f);
+  const text = `Ms ${it.code}\nGiá: ${it.price}\n${it.desc}`;
+  navigator.clipboard.writeText(text).then(() => toast('Đã copy mã số, giá, mô tả'));
+}
+
+async function openFolder(folder) {
+  await api('/api/open', { folder: folder || '' });
+}
+
+async function clearJobs() { await api('/api/clear', {}); loadJobs(); }
+
+function openModal(f) {
+  cur = find(f); idx = 0;
+  if (!cur || !cur.images.length) return;
+  $('mTitle').textContent = `Ms ${cur.code} · ${cur.price}`;
+  $('strip').innerHTML = cur.images.map((n, i) =>
+    `<img loading="lazy" src="${img(cur.folder, n)}" onclick="show(${i})">`).join('');
+  $('modal').classList.add('open');
+  show(0);
+}
+function show(i) {
+  idx = (i + cur.images.length) % cur.images.length;
+  $('mImg').src = img(cur.folder, cur.images[idx]);
+  $('mPos').textContent = `${idx + 1}/${cur.images.length}`;
+  [...$('strip').children].forEach((el, k) => el.classList.toggle('cur', k === idx));
+  $('strip').children[idx].scrollIntoView({ block: 'nearest', inline: 'center' });
+}
+function step(d) { show(idx + d); }
+function closeModal() { $('modal').classList.remove('open'); }
+document.addEventListener('keydown', e => {
+  if (!$('modal').classList.contains('open')) return;
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'ArrowLeft') step(-1);
+  if (e.key === 'ArrowRight') step(1);
+});
+
+loadItems();
+loadJobs();
+</script>
+</body>
+</html>
